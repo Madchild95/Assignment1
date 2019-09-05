@@ -1,9 +1,18 @@
 ---
 title: "Assignment 1 - Data Cleaning - Instructions"
-author: "[FILL IN YOUR NAME]"
-date: "[FILL IN THE DATE]"
-output: html_document
+author: "Matilde Jacobsen"
+date: "05/09/2019"
+output: 
+  md_document:
+    variant: markdown_github
+editor_options: 
+  chunk_output_type: console
 ---
+
+```{r}
+
+```
+
 
 # Assignment 1, Language development in Autism Spectrum Disorder (ASD) - Brushing up your code skills
 
@@ -61,6 +70,8 @@ If you're not in a project in Rstudio, make sure to set your working directory h
 If you created an RStudio project, then your working directory (the directory with your data and code for these assignments) is the project directory.
 
 ```{r}
+install.packages("pacman")
+library(pacman)
 pacman::p_load(tidyverse,janitor)
 ```
 
@@ -70,7 +81,10 @@ Load the three data sets, after downloading them from dropbox and saving them in
 * Word data: https://www.dropbox.com/s/8ng1civpl2aux58/token_train.csv?dl=0
 
 ```{r}
-
+#Assigning data sets
+demo <- read.csv("demo_train.csv")
+LU <- read.csv("LU_train.csv")
+token <- read.csv("token_train.csv")
 ```
 
 Explore the 3 datasets (e.g. visualize them, summarize them, etc.). You will see that the data is messy, since the psychologist collected the demographic data, the linguist analyzed the length of utterance in May 2014 and the fumbling jack-of-all-trades analyzed the words several months later. 
@@ -78,6 +92,13 @@ In particular:
 - the same variables might have different names (e.g. participant and visit identifiers)
 - the same variables might report the values in different ways (e.g. participant and visit IDs)
 Welcome to real world of messy data :-)
+
+```{r}
+summary(demo)
+summary(LU)
+summary(token)
+```
+
 
 Before being able to combine the data sets we need to make sure the relevant variables have the same names and the same kind of values.
 
@@ -88,10 +109,11 @@ Pay particular attention to the variables indicating participant and visit.
 
 Tip: look through the chapter on data transformation in R for data science (http://r4ds.had.co.nz). Alternatively you can look into the package dplyr (part of tidyverse), or google "how to rename variables in R". Or check the janitor R package. There are always multiple ways of solving any problem and no absolute best method.
 
-
 ```{r}
-
+#Fit variable names
+demo <- plyr::rename(demo, c("Child.ID" = "SUBJ" , "Visit"="VISIT"))
 ```
+
 
 2b. Find a way to homogeneize the way "visit" is reported (visit1 vs. 1).
 
@@ -100,6 +122,8 @@ Tip: The stringr package is what you need. str_extract () will allow you to extr
 
 ```{r}
 
+LU$VISIT <- stringr::str_extract(LU$VISIT, "\\-*\\d+\\.*\\d*")
+token$VISIT <- stringr::str_extract(token$VISIT, "\\-*\\d+\\.*\\d*")
 
 ```
 
