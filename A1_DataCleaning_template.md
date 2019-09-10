@@ -1,9 +1,3 @@
-``` r
-#Visualization of data
-#do a scatter plot
-#make a boxplot
-```
-
 Assignment 1, Language development in Autism Spectrum Disorder (ASD) - Brushing up your code skills
 ===================================================================================================
 
