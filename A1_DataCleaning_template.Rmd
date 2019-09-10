@@ -70,7 +70,6 @@ If you're not in a project in Rstudio, make sure to set your working directory h
 If you created an RStudio project, then your working directory (the directory with your data and code for these assignments) is the project directory.
 
 ```{r}
-install.packages("pacman")
 library(pacman)
 pacman::p_load(tidyverse,janitor)
 ```
@@ -112,6 +111,7 @@ Tip: look through the chapter on data transformation in R for data science (http
 ```{r}
 #Fit variable names
 demo <- plyr::rename(demo, c("Child.ID" = "SUBJ" , "Visit"="VISIT"))
+LU <- plyr::rename(LU, c("Child.ID" = "SUBJ" , "Visit"="VISIT"))
 ```
 
 
@@ -121,9 +121,9 @@ Tip: The stringr package is what you need. str_extract () will allow you to extr
 
 
 ```{r}
-
-LU$VISIT <- stringr::str_extract(LU$VISIT, "\\-*\\d+\\.*\\d*")
-token$VISIT <- stringr::str_extract(token$VISIT, "\\-*\\d+\\.*\\d*")
+#Removing full stop from VISIT
+LU$VISIT <- stringr::str_extract(LU$VISIT, "\\d")
+token$VISIT <- stringr::str_extract(token$VISIT, "\\d")
 
 ```
 
@@ -135,7 +135,10 @@ Tip: You can either have one line of code for each child name that is to be chan
 
 
 ```{r}
-
+#Remove full stops in SUBJ
+demo$SUBJ <- str_replace_all(demo$SUBJ, "[[:punct:]]","")
+LU$SUBJ <- str_replace_all(LU$SUBJ, "[[:punct:]]","")
+token$SUBJ <- str_replace_all(token$SUBJ, "[[:punct:]]","")
 ```
 
 2d. Now that the nitty gritty details of the different data sets are fixed, we want to make a subset of each data set only containig the variables that we wish to use in the final data set.
@@ -171,7 +174,15 @@ Most variables should make sense, here the less intuitive ones.
 Feel free to rename the variables into something you can remember (i.e. nonVerbalIQ, verbalIQ)
 
 ```{r}
+#Rename 
+demo <- plyr::rename(demo, c("MullenRaw" = "nonVerbalIQ", "ExpressiveLangRaw" = "verbalIQ", "ADOS" = "severity"))
 
+token <- plyr::rename(token, c("types_MOT" = "uniqueW_MOT", "types_CHI" = "uniqueW_CHI", "tokens_MOT" = "totalW_MOT", "tokens_CHI" = "totalW_CHI"))
+
+#Making subsets
+demoSub <- subset(demo, select = c(SUBJ:Diagnosis, Gender, Age, severity, Socialization, nonVerbalIQ, verbalIQ))
+LUSub <- subset(LU, select= c(SUBJ, VISIT, MOT_MLU, CHI_MLU))
+tokenSub <- subset(token, select= c(SUBJ, VISIT, uniqueW_MOT, uniqueW_CHI, totalW_MOT, totalW_CHI))
 ```
 
 2e. Finally we are ready to merge all the data sets into just one. 
@@ -181,8 +192,12 @@ Some things to pay attention to:
 * make sure to understand whether (and if so why) there are NAs in the dataset (e.g. some measures were not taken at all visits, some recordings were lost or permission to use was withdrawn)
 
 ```{r}
+#Merging the datasets
+dfMerge <- merge.data.frame(LUSub, demoSub, all=T)
+allMerged <- merge.data.frame(dfMerge, tokenSub, all=T)
 
-
+#Look at NA's
+summary(is.na(allMerged))
 ```
 
 
@@ -197,7 +212,12 @@ A possible way to do so:
 
 
 ```{r}
-
+#Creating a new dataset from visit 1 only
+visit1 <- subset(allMerged, VISIT == 1, select=c(SUBJ, severity, nonVerbalIQ, verbalIQ, Socialization))
+#Remane variables from visit 1
+visit1 <- plyr::rename(visit1, c("severity" = "severity1","nonVerbalIQ" ="nonVerbalIQ1", "verbalIQ" = "verbalIQ1", "Socialization" = "Socialization1"))
+#Merge new and old
+allMerged <- merge(visit1, allMerged, by = "SUBJ")
 ```
 
 2g. Final touches
@@ -208,7 +228,26 @@ Now we want to
 * Save the data set using into a csv file. Hint: look into write.csv()
 
 ```{r}
+#Remane gender
+allMerged$Gender[allMerged$Gender==1] <- "M"
+allMerged$Gender[allMerged$Gender==2] <- "F"
+#or it can be done with this function
+allMerged$Gender <- ifelse(allMerged$Gender == "1","M","F")
 
+#Rename diagnosis
+allMerged$Diagnosis <- as.character(allMerged$Diagnosis)
+allMerged$Diagnosis <- ifelse(allMerged$Diagnosis == "A","ASD","TD")
+
+#Remane etnicity
+summary(allMerged$Ethnicity)
+allMerged$Ethnicity[allMerged$Ethnicity=="Bangledeshi"]<- "Bangladeshi"
+summary(allMerged$Ethnicity)
+
+#Annonymizing
+allMerged$SUBJ <- as.numeric(as.factor(allMerged$SUBJ))
+
+#Create CSV
+write.csv(allMerged, file = "Cleaned_Data_Frame.csv")
 ```
 
 
